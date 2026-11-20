@@ -361,6 +361,7 @@
               <div class="flex gap-8" style="flex-wrap:wrap;">
                 <button class="btn btn-lg qr-sortear-btn" id="rf-spin-btn" onclick="rfStartSorteo()" disabled><i data-lucide="trophy"></i> Sortear</button>
                 <button class="btn btn-outline btn-sm" onclick="rfOpenWindow()" title="Abrir la ruleta en otra ventana (proyector)"><i data-lucide="monitor"></i> Pantalla aparte</button>
+                <button class="btn btn-outline btn-sm" onclick="rfShareLink()" title="Link sin login, valido 15 minutos"><i data-lucide="share-2"></i> Compartir link (15 min)</button>
                 <button class="btn btn-outline btn-sm" id="rf-rename-btn" onclick="rfRename()"><i data-lucide="pencil"></i> Renombrar</button>
                 <button class="btn btn-ghost btn-sm" onclick="switchView('sorteos')"><i data-lucide="arrow-left"></i> Volver</button>
               </div>
@@ -677,7 +678,7 @@
       <div class="wb-company" id="sr-winnerCompany"></div>
       <div class="wb-actions">
         <button class="wb-btn wb-btn-again" onclick="srDismissAndSpin()">Otro sorteo</button>
-        <button class="wb-btn wb-btn-close" onclick="srDismissBanner()">Cerrar</button>
+        <button class="wb-btn wb-btn-close" onclick="srDismissBanner();if(typeof srCheckLinkExpired==='function')srCheckLinkExpired();">Cerrar</button>
       </div>
     </div>
     <div class="sr-panel-overlay" id="sr-panelOverlay"></div>

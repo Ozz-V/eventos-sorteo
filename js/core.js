@@ -55,7 +55,7 @@ function esc(str) {
 
     // BOOT
     window.onload = async () => {
-      if (new URLSearchParams(window.location.search).has('sorteo')) { document.documentElement.style.visibility = 'visible'; return; }
+      if (new URLSearchParams(window.location.search).has('sorteo') || new URLSearchParams(window.location.search).has('sorteo-link')) { document.documentElement.style.visibility = 'visible'; return; }
       lucide.createIcons();
       const hash = window.location.hash;
 if (hash.startsWith('#/lista/')) { const evId = hash.split('/').pop(); hideLoading(); showPublicLista(evId); return; }

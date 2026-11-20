@@ -493,3 +493,47 @@ window.addEventListener('focus', async () => {
   const { data } = await sb.from('raffle_winners').select('*').eq('raffle_id', rfCurrent.id).order('won_at', { ascending: true });
   if (data && data.length !== rfWinners.length) { rfWinners = data; rfRenderAll(); }
 });
+
+// ---------------------------------------------------------------------
+// LINK COMPARTIDO: cualquiera lo puede abrir SIN LOGIN durante 15 minutos
+// (para proyectar en otra pantalla). El servidor elige y guarda el ganador.
+// ---------------------------------------------------------------------
+async function rfShareLink() {
+  if (!rfCurrent) return;
+  if (rfEligible().length < 2) { showToast('Se necesitan al menos 2 participantes habilitados', 'error'); return; }
+  const { data, error } = await sb.from('raffle_share_links').insert([{ raffle_id: rfCurrent.id }]).select().single();
+  if (error) {
+    showToast('No se pudo crear el link: ' + error.message + (/does not exist|relation/i.test(error.message) ? ' (falta ejecutar sql/04_link_sorteo.sql)' : ''), 'error');
+    return;
+  }
+  const url = window.location.href.split('?')[0].split('#')[0] + '?sorteo-link=' + data.token;
+  const hasta = new Date(data.expires_at).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+  const wa = 'https://wa.me/?text=' + encodeURIComponent('Sorteo "' + rfCurrent.name + '" (valido hasta las ' + hasta + '): ' + url);
+  const r = await Swal.fire({
+    title: 'Link del sorteo',
+    html: '<p style="font-size:14px;color:#6b7280;margin-bottom:12px;">Cualquiera con este link puede ver y girar la ruleta <b>sin login</b> hasta las <b>' + hasta + '</b> (15 minutos). Cada ganador se guarda en este sorteo.</p>' +
+      '<input id="rf-share-url" readonly value="' + esc(url) + '" style="width:100%;padding:10px 12px;border:1.5px solid #e2e0d8;border-radius:8px;font-size:12px;font-family:monospace;" onclick="this.select()">' +
+      '<div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;">' +
+        '<a href="' + esc(wa) + '" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><i data-lucide="message-circle"></i> Enviar por WhatsApp</a>' +
+        '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><i data-lucide="external-link"></i> Abrir</a>' +
+      '</div>' +
+      '<p style="font-size:12px;color:#9ca3af;margin-top:14px;">Con el link solo se ve nombre, empresa y los ultimos 3 digitos del telefono.</p>',
+    showCancelButton: true, showDenyButton: true,
+    confirmButtonText: 'Copiar link', denyButtonText: 'Desactivar links de este sorteo', cancelButtonText: 'Cerrar',
+    confirmButtonColor: '#0d2359', denyButtonColor: '#dc2626',
+    didOpen: () => lucide.createIcons()
+  });
+  if (r.isConfirmed) {
+    try { await navigator.clipboard.writeText(url); showToast('Link copiado. Vence a las ' + hasta, 'success'); }
+    catch (e) { showToast('Copialo manualmente del recuadro', ''); }
+  } else if (r.isDenied) {
+    rfRevokeLinks();
+  }
+}
+
+async function rfRevokeLinks() {
+  if (!rfCurrent) return;
+  const { error } = await sb.from('raffle_share_links').update({ expires_at: '2000-01-01T00:00:00Z' }).eq('raffle_id', rfCurrent.id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('Links desactivados: ya nadie puede usarlos', 'success');
+}

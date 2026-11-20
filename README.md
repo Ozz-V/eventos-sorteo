@@ -25,7 +25,8 @@ comagro-eventos/
     ├── 01a_funciones.sql        ← funciones del formulario y la lista (ya ejecutado)
     ├── 01b_historial_opcional.sql ← historial anti-perdida (ya ejecutado)
     ├── 02_activar_seguridad.sql ← cierra el acceso publico (ya ejecutado)
-    ├── 03_sorteos.sql           ← tablas de sorteos (v1.1.0)
+    ├── 03_sorteos.sql           ← tablas de sorteos
+    ├── 04_link_sorteo.sql       ← link compartido del sorteo (15 min, sin login)
     ├── 99_volver_atras.sql      ← emergencia
     └── recuperar_datos.sql      ← restaurar algo borrado
 ```
@@ -106,6 +107,7 @@ Si algo sale mal, volvés a poner el número de versión anterior y queda como a
 - Participantes: carga manual, subir Excel o pegar desde Excel. Todo se guarda en la base.
 - Cada ganador queda guardado con fecha y hora. Si un ganador no estaba, se puede **anular** y vuelve a participar.
 - "Pantalla aparte" abre la ruleta en otra ventana (proyector). Requiere sesión iniciada en ese navegador.
+- **Compartir link (15 min)**: genera un link que cualquiera puede abrir SIN login durante 15 minutos (para proyectar en otro lugar). El ganador lo elige el servidor y queda guardado. Con el link solo se ve nombre, empresa y los últimos 3 dígitos del teléfono. Se puede desactivar antes desde el mismo botón.
 - Los sorteos no se borran: se **archivan**.
 
 ## Cómo agregar o quitar administradores
