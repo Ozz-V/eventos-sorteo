@@ -1,4 +1,4 @@
-# Eventos
+# Comagro Eventos
 
 Sistema de eventos, inscripciones, check-in, presupuesto, informes y sorteos.
 El código vive en este repositorio y la página de Adobe Commerce solo lo carga.
@@ -18,12 +18,14 @@ comagro-eventos/
 │   ├── presupuesto.js
 │   ├── reportes.js              ← informes, gráficos, PDF, pausar inscripciones
 │   ├── publico.js               ← formulario de inscripción y lista compartida
-│   ├── sorteo-rapido.js
+│   ├── sorteos.js               ← sorteos guardados: participantes y ganadores
 │   └── sorteo.js                ← ruleta
 └── sql/
     ├── 00_diagnostico.sql       ← solo lectura: foto de cómo está todo
-    ├── 01_funciones_y_historial.sql
-    ├── 02_activar_seguridad.sql
+    ├── 01a_funciones.sql        ← funciones del formulario y la lista (ya ejecutado)
+    ├── 01b_historial_opcional.sql ← historial anti-perdida (ya ejecutado)
+    ├── 02_activar_seguridad.sql ← cierra el acceso publico (ya ejecutado)
+    ├── 03_sorteos.sql           ← tablas de sorteos (v1.1.0)
     ├── 99_volver_atras.sql      ← emergencia
     └── recuperar_datos.sql      ← restaurar algo borrado
 ```
@@ -96,6 +98,15 @@ Ejecutar `sql/99_volver_atras.sql`. Vuelve a crear las 2 políticas públicas ex
 
 Si algo sale mal, volvés a poner el número de versión anterior y queda como antes.
 (No uses `@main` en lugar del número: jsDelivr guarda copias por horas y los cambios tardan en verse.)
+
+## Sorteos
+
+- **Sorteos → Crear sorteo**: nombre + (opcional) evento. Si elegís un evento, se cargan sus presentes o todos sus inscriptos.
+- Desde **Gestionar evento → Sorteo** se ven los sorteos de ese evento o se crea uno nuevo.
+- Participantes: carga manual, subir Excel o pegar desde Excel. Todo se guarda en la base.
+- Cada ganador queda guardado con fecha y hora. Si un ganador no estaba, se puede **anular** y vuelve a participar.
+- "Pantalla aparte" abre la ruleta en otra ventana (proyector). Requiere sesión iniciada en ese navegador.
+- Los sorteos no se borran: se **archivan**.
 
 ## Cómo agregar o quitar administradores
 

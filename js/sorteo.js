@@ -20,30 +20,71 @@
   }
 })();
 
-function abrirSorteo() { if (!currentEventId) return; var baseUrl=window.location.href.split('?')[0].split('#')[0]; window.open(baseUrl+'?sorteo='+currentEventId,'_blank','width=1280,height=800'); }
+// abrirSorteo() ahora esta en sorteos.js (abre el selector/creador de sorteos del evento)
 
 var srNames=[],srData=[],srOriginal=[],srRotation=0,srSpinning=false,srLastActive=-1,srSpinFrom=0,srSpinTo=0,srSpinDur=5500,srSpinStart=null,srWinnerIdx=-1,srCssSize=400,srDPR=1,srCanvas,srCtx;
 var srLocalMode=false,srRemoveWinner=false,srPendingRemoval=false,srLoopStarted=false,srResizeBound=false;
+var srOnWinner=null,srPersist=false;   // srOnWinner: funcion que guarda cada ganador en la base
 
-async function initSorteo(evId) {
+// Ventana aparte (?sorteo=ID). ID puede ser un sorteo guardado (raffles)
+// o, por compatibilidad con links viejos, un evento (usa sus presentes).
+function srShowEmpty(title, msg, loginLink) {
+  document.getElementById('sr-loading').style.display='none';
+  var box=document.getElementById('sr-empty');
+  box.querySelector('h3').textContent=title;
+  box.querySelector('p').innerHTML=srEscHtml(msg)+(loginLink?'<br><br><a href="/login" style="color:#45d636;font-weight:700;">Iniciar sesion</a>':'');
+  box.classList.add('show');
+}
+
+async function initSorteo(id) {
   srLocalMode=false;
   document.getElementById('sorteo-root').classList.add('active');
   document.getElementById('sr-loading').style.display='flex';
   document.getElementById('sr-empty').classList.remove('show');
-  var sbLocal=(typeof sb!=='undefined')?sb:supabase.createClient('https://itylpvuzflqlmmqvdhbz.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0eWxwdnV6ZmxxbG1tcXZkaGJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjYzMTgsImV4cCI6MjA5MTg0MjMxOH0.yuZ5sWX-Isxd04ySP_ZgDLit1fQDsxoeb25GmU_C_5I');
-  var evResult=await sbLocal.from('events').select('*').eq('id',evId).single();
+  var sess=await sb.auth.getSession();
+  if(!sess.data||!sess.data.session){
+    srShowEmpty('Inicia sesion','La ruleta usa los datos de los participantes: solo la pueden abrir administradores con sesion iniciada en este navegador.',true);
+    return;
+  }
+
+  // 1) Sorteo guardado
+  var rr=await sb.from('raffles').select('*, events(name)').eq('id',id).maybeSingle();
+  if(rr.data){
+    var raffle=rr.data;
+    var pr=await sb.from('raffle_participants').select('*').eq('raffle_id',raffle.id).order('created_at');
+    var wr=await sb.from('raffle_winners').select('participant_id').eq('raffle_id',raffle.id);
+    var won={}; (wr.data||[]).forEach(function(w){ if(w.participant_id) won[w.participant_id]=1; });
+    var parts=(pr.data||[]).filter(function(p){ return !raffle.remove_winners || !won[p.id]; });
+    document.getElementById('sr-event-name').textContent=raffle.name;
+    document.getElementById('sr-event-meta').textContent=(raffle.events&&raffle.events.name?raffle.events.name+' · ':'')+parts.length+' participantes';
+    document.title='Sorteo | '+raffle.name;
+    document.getElementById('sr-loading').style.display='none';
+    if(parts.length<2){ srShowEmpty('Sin participantes suficientes','Se necesitan al menos 2 participantes habilitados en este sorteo.'); return; }
+    srRemoveWinner=!!raffle.remove_winners; srPersist=true;
+    srOnWinner=async function(d){
+      var ins=await sb.from('raffle_winners').insert([{raffle_id:raffle.id,participant_id:d.pid||null,nombre:d.nombreOriginal||d.nombre,telefono:d.telefono||null,empresa:d.company||null}]);
+      if(ins.error) alert('ATENCION: el ganador no se pudo guardar: '+ins.error.message);
+    };
+    srSetup(parts.map(function(p){ return {id:p.id,first_name:p.nombre,phone:p.telefono,company:p.empresa}; }));
+    return;
+  }
+
+  // 2) Link viejo: id de evento -> presentes (no guarda ganadores)
+  var evResult=await sb.from('events').select('*').eq('id',id).maybeSingle();
   var ev=evResult.data;
-  if(ev){document.getElementById('sr-event-name').textContent=ev.name;document.getElementById('sr-event-meta').textContent=(ev.type?ev.type.charAt(0).toUpperCase()+ev.type.slice(1):'Evento')+' - '+srFormatDate(ev.date)+(ev.time?' - '+ev.time:'')+(ev.location?' - '+ev.location:'');document.title='Sorteo | '+ev.name;}
-  var regsResult=await sbLocal.from('registrations').select('*').eq('event_id',evId).eq('status','presente');
+  if(!ev){ srShowEmpty('Sorteo no encontrado','El link no es valido o no tenes permiso para verlo.'); return; }
+  document.getElementById('sr-event-name').textContent=ev.name;document.getElementById('sr-event-meta').textContent=(ev.type?ev.type.charAt(0).toUpperCase()+ev.type.slice(1):'Evento')+' - '+srFormatDate(ev.date)+(ev.location?' - '+ev.location:'');document.title='Sorteo | '+ev.name;
+  var regsResult=await sb.from('registrations').select('*').eq('event_id',id).eq('status','presente');
   var lista=regsResult.data||[];
   document.getElementById('sr-loading').style.display='none';
-  if(lista.length<2){document.getElementById('sr-empty').classList.add('show');document.querySelector('#sr-empty p').textContent=lista.length===0?'No hay inscriptos marcados como presentes en este evento.':'Se necesitan al menos 2 participantes para hacer el sorteo.';return;}
+  if(lista.length<2){ srShowEmpty('Sin presentes', lista.length===0?'No hay inscriptos marcados como presentes en este evento.':'Se necesitan al menos 2 participantes para hacer el sorteo.'); return; }
   srSetup(lista);
 }
 
-// Abre el sorteo en la misma pagina con una lista local (Sorteo rapido)
-function openLocalSorteo(lista, title, meta, removeWinner) {
+// Abre la ruleta en la misma pagina. opts.onWinner(d) guarda cada ganador.
+function openLocalSorteo(lista, title, meta, removeWinner, opts) {
   srLocalMode=true; srRemoveWinner=!!removeWinner; srPendingRemoval=false;
+  srOnWinner=(opts&&opts.onWinner)||null; srPersist=!!srOnWinner;
   var root=document.getElementById('sorteo-root');
   if(root.parentElement!==document.body) document.body.appendChild(root);
   root.classList.add('active');
@@ -63,7 +104,7 @@ function srSetup(lista) {
     var fn=(r.first_name||'?').trim().split(/\s+/);
     var shortName=fn[0];
     if(fn[1]) shortName+=' '+fn[1].charAt(0)+'.';
-    return { display:shortName.toUpperCase(), nombre:(r.first_name||'').toUpperCase(), telefono:r.phone||'', company:r.company||'' };
+    return { pid:r.id||null, display:shortName.toUpperCase(), nombre:(r.first_name||'').toUpperCase(), nombreOriginal:(r.first_name||'').trim(), telefono:r.phone||'', company:r.company||'' };
   });
   srOriginal=srData.slice();
   srRebuildWheel();
@@ -108,15 +149,18 @@ function srMeasureText(text,fs){var mc=document.createElement('canvas').getConte
 
 function srSetDisplayName(name){var el=document.getElementById('sr-bigName');if(!el||el.textContent===name)return;el.textContent=name;requestAnimationFrame(function(){var col=el.parentElement,cs=getComputedStyle(col),maxW=col.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),fs=parseFloat(getComputedStyle(el).fontSize);while(fs>28&&srMeasureText(name,fs)>maxW)fs-=2;el.style.fontSize=fs+'px';});}
 
+// Numero aleatorio seguro (crypto) para que el sorteo sea justo
+function srRandomInt(n){ try{ var a=new Uint32Array(1), lim=Math.floor(4294967296/n)*n, v; do{ crypto.getRandomValues(a); v=a[0]; }while(v>=lim); return v%n; }catch(e){ return Math.floor(Math.random()*n); } }
+
 function easeOutQuint(t){return 1-Math.pow(1-t,5);}
 
 function srAnimate(ts){if(srSpinning){if(!srSpinStart)srSpinStart=ts;var elapsed=ts-srSpinStart,progress=Math.min(elapsed/srSpinDur,1);srRotation=srSpinFrom+(srSpinTo-srSpinFrom)*easeOutQuint(progress);if(progress>=1){srRotation=srSpinTo;srSpinning=false;srSpinStart=null;srOnSpinEnd();}}srDraw();requestAnimationFrame(srAnimate);}
 
-function srOnSpinEnd(){document.getElementById('sr-spinBtn').disabled=false;document.getElementById('sr-spinBtn').textContent='GIRAR';var el=document.getElementById('sr-bigName');el.classList.remove('winner-flash');void el.offsetWidth;el.classList.add('winner-flash');el.addEventListener('animationend',function(){el.classList.remove('winner-flash');},{once:true});var d=srData[srWinnerIdx];document.getElementById('sr-winnerName').textContent=d?d.nombre:srNames[srWinnerIdx];document.getElementById('sr-winnerPhone').textContent=d&&d.telefono?d.telefono:'';document.getElementById('sr-winnerCompany').textContent=d&&d.company?d.company.toUpperCase():'';setTimeout(function(){document.getElementById('sr-winnerBanner').classList.add('show');srLaunchConfetti();},600);srPendingRemoval=srRemoveWinner;}
+function srOnSpinEnd(){document.getElementById('sr-spinBtn').disabled=false;document.getElementById('sr-spinBtn').textContent='GIRAR';var el=document.getElementById('sr-bigName');el.classList.remove('winner-flash');void el.offsetWidth;el.classList.add('winner-flash');el.addEventListener('animationend',function(){el.classList.remove('winner-flash');},{once:true});var d=srData[srWinnerIdx];document.getElementById('sr-winnerName').textContent=d?d.nombre:srNames[srWinnerIdx];document.getElementById('sr-winnerPhone').textContent=d&&d.telefono?d.telefono:'';document.getElementById('sr-winnerCompany').textContent=d&&d.company?d.company.toUpperCase():'';setTimeout(function(){document.getElementById('sr-winnerBanner').classList.add('show');srLaunchConfetti();},600);srPendingRemoval=srRemoveWinner;if(srOnWinner&&d){try{srOnWinner(d);}catch(e){console.error(e);}}}
 
-function srStartSpin(){if(srSpinning||srNames.length<2)return;srSpinning=true;srLastActive=-1;srWinnerIdx=Math.floor(Math.random()*srNames.length);var n=srNames.length,sliceDeg=360/n,targetMod=((-(srWinnerIdx*sliceDeg))%360+360)%360,currentMod=(srRotation%360+360)%360,delta=(targetMod-currentMod+360)%360;if(delta<sliceDeg)delta+=360;srSpinFrom=srRotation;srSpinTo=srRotation+delta+360*(6+Math.floor(Math.random()*5));srSpinDur=5200+Math.random()*2600;srSpinStart=null;var btn=document.getElementById('sr-spinBtn');btn.disabled=true;btn.textContent='Girando...';}
+function srStartSpin(){if(srSpinning||srNames.length<2)return;srSpinning=true;srLastActive=-1;srWinnerIdx=srRandomInt(srNames.length);var n=srNames.length,sliceDeg=360/n,targetMod=((-(srWinnerIdx*sliceDeg))%360+360)%360,currentMod=(srRotation%360+360)%360,delta=(targetMod-currentMod+360)%360;if(delta<sliceDeg)delta+=360;srSpinFrom=srRotation;srSpinTo=srRotation+delta+360*(6+Math.floor(Math.random()*5));srSpinDur=5200+Math.random()*2600;srSpinStart=null;var btn=document.getElementById('sr-spinBtn');btn.disabled=true;btn.textContent='Girando...';}
 
-function srReset(){if(srSpinning)return;srPendingRemoval=false;if(srRemoveWinner&&srOriginal.length){srData=srOriginal.slice();srRebuildWheel();}srRotation=0;srLastActive=-1;var el=document.getElementById('sr-bigName');el.textContent=srNames.length?srNames[0]:'---';el.style.fontSize='';document.getElementById('sr-winnerBanner').classList.remove('show');}
+function srReset(){if(srSpinning)return;srPendingRemoval=false;if(!srPersist&&srRemoveWinner&&srOriginal.length){srData=srOriginal.slice();srRebuildWheel();}srRotation=0;srLastActive=-1;var el=document.getElementById('sr-bigName');el.textContent=srNames.length?srNames[0]:'---';el.style.fontSize='';document.getElementById('sr-winnerBanner').classList.remove('show');}
 
 function srLaunchConfetti(){if(typeof confetti==='undefined')return;var colors=['#45d636','#4aabdf','#ffffff','#ffd700','#ff6b6b'],end=Date.now()+4500;(function frame(){confetti({particleCount:4,angle:60,spread:65,startVelocity:55,origin:{x:0,y:0.6},colors:colors,zIndex:9200});confetti({particleCount:4,angle:120,spread:65,startVelocity:55,origin:{x:1,y:0.6},colors:colors,zIndex:9200});if(Date.now()<end)requestAnimationFrame(frame);})();}
 

@@ -448,19 +448,19 @@ code { font-family: 'Courier New', monospace; background: #f5f4f0; padding: 2px 
 
   .qr-header { flex-direction: column; align-items: stretch !important; }
   .qr-header .qr-sortear-btn { display: none; }
-  #view-sorteo-rapido .ce-tabs { padding: 0 8px; overflow-x: auto; }
-  #view-sorteo-rapido .ce-tab { padding: 12px 10px; white-space: nowrap; font-size: 12px; }
-  #view-sorteo-rapido .ce-tab-panel { padding: 16px; }
-  #view-sorteo-rapido .ce-card-header { flex-wrap: wrap; padding: 16px; }
-  #view-sorteo-rapido .search-wrap, #view-sorteo-rapido .search-wrap input { width: 100%; }
-  #view-sorteo-rapido .qr-head-actions { width: 100%; }
-  #view-sorteo-rapido .qr-head-actions .search-wrap { flex: 1; }
-  #view-sorteo-rapido #qr-manual-form .btn { width: 100%; justify-content: center; }
-  #view-sorteo-rapido th, #view-sorteo-rapido td { padding: 11px 10px; }
+  #view-sorteo-detalle .ce-tabs { padding: 0 8px; overflow-x: auto; }
+  #view-sorteo-detalle .ce-tab { padding: 12px 10px; white-space: nowrap; font-size: 12px; }
+  #view-sorteo-detalle .ce-tab-panel { padding: 16px; }
+  #view-sorteo-detalle .ce-card-header { flex-wrap: wrap; padding: 16px; }
+  #view-sorteo-detalle .search-wrap, #view-sorteo-detalle .search-wrap input { width: 100%; }
+  #view-sorteo-detalle .qr-head-actions { width: 100%; }
+  #view-sorteo-detalle .qr-head-actions .search-wrap { flex: 1; }
+  #view-sorteo-detalle #qr-manual-form .btn { width: 100%; justify-content: center; }
+  #view-sorteo-detalle th, #view-sorteo-detalle td { padding: 11px 10px; }
   .qr-options { padding: 14px 16px; }
   .qr-col-company { display: none; }
   .qr-company-inline { display: block; }
-  #view-sorteo-rapido { padding-bottom: 80px; }
+  #view-sorteo-detalle { padding-bottom: 80px; }
   .qr-mobile-bar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(255,255,255,0.96); border-top: 1px solid var(--border); z-index: 150; box-shadow: 0 -4px 16px rgba(0,0,0,0.06); }
   .qr-mobile-bar .btn { width: 100%; justify-content: center; }
 }

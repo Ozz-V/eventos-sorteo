@@ -79,8 +79,8 @@
           <div class="ce-nav-item" data-view="reportes" onclick="switchView('reportes')">
             <i data-lucide="bar-chart-2"></i> Informes
           </div>
-          <div class="ce-nav-item" data-view="sorteo-rapido" onclick="switchView('sorteo-rapido')">
-            <i data-lucide="trophy"></i><span class="nav-label">Sorteo rápido</span>
+          <div class="ce-nav-item" data-view="sorteos" onclick="switchView('sorteos')">
+            <i data-lucide="trophy"></i><span class="nav-label">Sorteos</span>
           </div>
           <div class="ce-nav-item" data-view="papelera" onclick="switchView('papelera')">
             <i data-lucide="trash-2"></i> Papelera
@@ -329,25 +329,68 @@
             <div class="events-grid" id="trash-grid"></div>
           </div>
 
-          <!-- SORTEO RAPIDO -->
-          <div id="view-sorteo-rapido" class="ce-view">
+          <!-- SORTEOS: LISTA -->
+          <div id="view-sorteos" class="ce-view">
             <div class="qr-header flex items-center" style="justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap;">
               <div>
-                <h2 style="font-family:'Roboto', sans-serif;font-size:26px;color:var(--navy);font-weight:400;">Sorteo rápido</h2>
-                <p class="text-sm text-muted" style="margin-top:3px;" id="qr-count-sub">Cargá participantes y sorteá al instante</p>
+                <h2 style="font-family:'Roboto', sans-serif;font-size:26px;color:var(--navy);font-weight:400;">Sorteos</h2>
+                <p class="text-sm text-muted" style="margin-top:3px;" id="rf-count-sub">Cargando...</p>
               </div>
-              <button class="btn btn-lg qr-sortear-btn" id="qr-sortear-btn" onclick="qrStartSorteo()" disabled><i data-lucide="trophy"></i> Sortear</button>
+              <div class="flex gap-8 items-center" style="flex-wrap:wrap;">
+                <label class="qr-option" style="padding:0;"><input type="checkbox" id="rf-show-archived"> Ver archivados</label>
+                <button class="btn btn-lg qr-sortear-btn" onclick="rfOpenCreateModal()"><i data-lucide="plus"></i> Crear sorteo</button>
+              </div>
+            </div>
+            <div id="rf-legacy-banner" class="hidden" style="background:#fdf6ec;border:1px solid #f1dfbf;border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+              <span style="font-size:13px;color:#7a5b1e;">Tenés una lista de <b id="rf-legacy-n">0</b> participantes del sorteo rápido anterior guardada solo en este navegador.</span>
+              <div class="flex gap-8">
+                <button class="btn btn-sm btn-primary" onclick="rfImportLegacy()">Guardarla como sorteo</button>
+                <button class="btn btn-sm btn-ghost" onclick="rfDiscardLegacy()">Descartar</button>
+              </div>
+            </div>
+            <div class="events-grid" id="rf-grid"></div>
+          </div>
+
+          <!-- SORTEOS: DETALLE -->
+          <div id="view-sorteo-detalle" class="ce-view">
+            <div class="qr-header flex items-center" style="justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap;">
+              <div style="min-width:0;">
+                <h2 id="rf-name" style="font-family:'Roboto', sans-serif;font-size:26px;color:var(--navy);font-weight:400;">Sorteo</h2>
+                <p id="rf-meta" class="text-sm text-muted" style="margin-top:3px;"></p>
+              </div>
+              <div class="flex gap-8" style="flex-wrap:wrap;">
+                <button class="btn btn-lg qr-sortear-btn" id="rf-spin-btn" onclick="rfStartSorteo()" disabled><i data-lucide="trophy"></i> Sortear</button>
+                <button class="btn btn-outline btn-sm" onclick="rfOpenWindow()" title="Abrir la ruleta en otra ventana (proyector)"><i data-lucide="monitor"></i> Pantalla aparte</button>
+                <button class="btn btn-outline btn-sm" id="rf-rename-btn" onclick="rfRename()"><i data-lucide="pencil"></i> Renombrar</button>
+                <button class="btn btn-ghost btn-sm" onclick="switchView('sorteos')"><i data-lucide="arrow-left"></i> Volver</button>
+              </div>
+            </div>
+
+            <!-- Ganadores -->
+            <div class="ce-card mb-28">
+              <div class="ce-card-header">
+                <span class="ce-card-title"><i data-lucide="award" style="width:18px;height:18px;display:inline;margin-right:8px;vertical-align:middle;"></i>Ganadores <span id="rf-win-badge" class="badge badge-presente" style="margin-left:10px;font-size:11px;">0</span></span>
+                <button class="btn btn-outline btn-sm" onclick="rfExportExcel()"><i data-lucide="download"></i> Exportar Excel</button>
+              </div>
+              <div class="qr-table-wrap" style="max-height:340px;">
+                <table id="rf-win-table">
+                  <thead><tr><th style="width:56px;">#</th><th>Ganador</th><th>Telefono</th><th class="qr-col-company">Empresa</th><th>Fecha y hora</th><th style="width:56px;"></th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
             </div>
 
             <!-- Carga -->
             <div class="ce-card mb-28">
-              <div class="ce-card-header"><span class="ce-card-title"><i data-lucide="user-plus" style="width:18px;height:18px;display:inline;margin-right:8px;vertical-align:middle;"></i>Cargar participantes</span></div>
+              <div class="ce-card-header">
+                <span class="ce-card-title"><i data-lucide="user-plus" style="width:18px;height:18px;display:inline;margin-right:8px;vertical-align:middle;"></i>Cargar participantes</span>
+                <button class="btn btn-outline btn-sm hidden" id="rf-sync-btn" onclick="rfSyncFromEvent()"><i data-lucide="refresh-cw"></i> Traer presentes del evento</button>
+              </div>
               <div class="ce-tabs" id="qr-tabs">
                 <div class="ce-tab active" data-tab="manual" onclick="qrSwitchTab('manual')">Carga manual</div>
                 <div class="ce-tab" data-tab="excel" onclick="qrSwitchTab('excel')">Subir Excel</div>
                 <div class="ce-tab" data-tab="pegar" onclick="qrSwitchTab('pegar')">Pegar desde Excel</div>
               </div>
-
               <div class="ce-tab-panel active" id="qr-panel-manual">
                 <form id="qr-manual-form" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
                   <div class="form-group" style="flex:1;min-width:200px;margin:0;"><label>Nombre y Apellido <span style="color:#dc2626;">*</span></label><input type="text" id="qr-fname" placeholder="Juan Gonzalez" required></div>
@@ -356,7 +399,6 @@
                   <button type="submit" class="btn btn-success" style="height:40px;padding:0 24px;"><i data-lucide="user-plus"></i> Agregar</button>
                 </form>
               </div>
-
               <div class="ce-tab-panel" id="qr-panel-excel">
                 <label class="qr-dropzone" id="qr-dropzone">
                   <input type="file" id="qr-file" accept=".xlsx,.xls,.csv" style="display:none;">
@@ -364,9 +406,8 @@
                   <div style="font-weight:600;color:var(--navy);font-size:15px;">Tocá para elegir un archivo o arrastralo acá</div>
                   <div class="text-sm text-muted" style="margin-top:4px;">Formatos: .xlsx, .xls, .csv</div>
                 </label>
-                <p class="qr-hint">Se lee la primera hoja. Si tiene encabezados como <code>Nombre</code>, <code>Telefono</code> o <code>Empresa</code> se usan automáticamente; si no tiene, las columnas se detectan solas (nombre, teléfono y empresa). Los duplicados se omiten.</p>
+                <p class="qr-hint">Se lee la primera hoja. Si tiene encabezados como <code>Nombre</code>, <code>Telefono</code> o <code>Empresa</code> se usan automáticamente; si no tiene, las columnas se detectan solas. Los duplicados se omiten.</p>
               </div>
-
               <div class="ce-tab-panel" id="qr-panel-pegar">
                 <textarea id="qr-paste" class="qr-paste" placeholder="Seleccioná las celdas en Excel, copiá (Ctrl+C) y pegá acá (Ctrl+V)&#10;&#10;Nombre	Telefono	Empresa&#10;Juan Gonzalez	0981 123 456	Comagro&#10;Maria Lopez	0971 555 222	Agro SA"></textarea>
                 <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
@@ -377,18 +418,16 @@
               </div>
             </div>
 
-            <!-- Lista -->
+            <!-- Participantes -->
             <div class="ce-card">
               <div class="ce-card-header">
                 <span class="ce-card-title"><i data-lucide="users" style="width:18px;height:18px;display:inline;margin-right:8px;vertical-align:middle;"></i>Participantes <span id="qr-count-badge" class="badge badge-navy" style="margin-left:10px;font-size:11px;">0</span></span>
                 <div class="flex gap-8 items-center qr-head-actions">
                   <div class="search-wrap"><i data-lucide="search"></i><input type="text" id="qr-search" placeholder="Buscar nombre, empresa..."></div>
-                  <button class="btn btn-danger btn-sm" onclick="qrClearAll()" title="Vaciar lista"><i data-lucide="trash-2"></i> Vaciar</button>
                 </div>
               </div>
               <div class="qr-options">
-                <div class="form-group" style="flex:1;min-width:200px;margin:0;"><label>Titulo del sorteo <span style="color:var(--muted);font-weight:400;">(opcional)</span></label><input type="text" id="qr-title" placeholder="Ej: Sorteo Expo Agro 2026"></div>
-                <label class="qr-option"><input type="checkbox" id="qr-remove-winner" checked> Quitar al ganador de la rueda para el siguiente sorteo</label>
+                <label class="qr-option" style="padding:0;"><input type="checkbox" id="qr-remove-winner" checked onchange="rfToggleRemoveWinners(this.checked)"> Los que ya ganaron no vuelven a participar en este sorteo</label>
               </div>
               <div class="qr-table-wrap">
                 <table id="qr-table">
@@ -399,12 +438,45 @@
             </div>
 
             <div class="qr-mobile-bar">
-              <button class="btn btn-lg qr-sortear-btn" id="qr-sortear-btn-m" onclick="qrStartSorteo()" disabled><i data-lucide="trophy"></i> Sortear</button>
+              <button class="btn btn-lg qr-sortear-btn" id="rf-spin-btn-m" onclick="rfStartSorteo()" disabled><i data-lucide="trophy"></i> Sortear</button>
             </div>
           </div>
 
         </div>
       </div>
+
+  <!-- MODAL CREAR SORTEO -->
+  <div id="modal-raffle" class="modal-overlay hidden">
+    <div class="modal" style="max-width:520px;max-height:90vh;overflow-y:auto;">
+      <div class="modal-header">
+        <span class="modal-title" id="rf-modal-title">Crear sorteo</span>
+        <button class="modal-close" onclick="rfCloseCreateModal()"><i data-lucide="x"></i></button>
+      </div>
+      <div id="rf-modal-existing" class="hidden" style="margin-bottom:20px;">
+        <div class="stat-label" style="margin-bottom:8px;">Sorteos de este evento</div>
+        <div id="rf-modal-existing-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div class="divider" style="margin:18px 0;"></div>
+        <div class="stat-label">O crear uno nuevo</div>
+      </div>
+      <form id="rf-create-form" style="display:flex;flex-direction:column;gap:16px;">
+        <div class="form-group"><label>Nombre del sorteo <span style="color:#dc2626;">*</span></label><input type="text" id="rf-new-name" placeholder="Ej: Sorteo Expo Agro 2026 - Premio mayor" required maxlength="150"></div>
+        <div class="form-group"><label>Evento <span style="color:var(--muted);font-weight:400;">(opcional)</span></label>
+          <select id="rf-new-event"><option value="">Sin evento (cargo los participantes a mano)</option></select>
+        </div>
+        <div class="form-group hidden" id="rf-new-source-wrap"><label>Participantes del evento</label>
+          <select id="rf-new-source">
+            <option value="presentes">Solo los presentes (con check-in)</option>
+            <option value="todos">Todos los inscriptos</option>
+            <option value="ninguno">Ninguno (los cargo yo)</option>
+          </select>
+        </div>
+        <div class="modal-footer" style="margin-top:4px;">
+          <button type="submit" class="btn btn-success" style="flex:1;justify-content:center;"><i data-lucide="plus"></i> Crear sorteo</button>
+          <button type="button" class="btn btn-outline" onclick="rfCloseCreateModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- MODAL CREAR EVENTO -->
   <div id="modal-create-event" class="modal-overlay hidden">

@@ -80,7 +80,7 @@ if (hash.startsWith('#/lista/')) { const evId = hash.split('/').pop(); hideLoadi
       document.getElementById('ce-root').style.display = '';
 
       const navHash = window.location.hash.replace('#','');
-      const validViews = ['dashboard','eventos','reportes','papelera','gestion','reporte-detalle','sorteo-rapido'];
+      const validViews = ['dashboard','eventos','reportes','papelera','gestion','reporte-detalle','sorteos','sorteo-detalle'];
       const startView = validViews.includes(navHash) ? navHash : 'dashboard';
       switchView(startView);
 
@@ -96,7 +96,8 @@ if (hash.startsWith('#/lista/')) { const evId = hash.split('/').pop(); hideLoadi
         if (v === 'papelera') renderTrashGrid();
         if (v === 'dashboard') loadAdminDashboard();
         if (v === 'reportes') renderReportCards();
-        if (v === 'sorteo-rapido') qrRender();
+        if (v === 'sorteos') rfLoadList();
+        if (v === 'sorteo-detalle' && typeof rfCurrent !== 'undefined' && rfCurrent) rfRenderAll();
         lucide.createIcons();
       });
     };
@@ -123,14 +124,15 @@ if (hash.startsWith('#/lista/')) { const evId = hash.split('/').pop(); hideLoadi
       gestion: ['Detalles', 'Gestion de inscriptos'],
       'reporte-detalle': ['Detalle', 'Visualizando datos del evento'],
       papelera: ['Papelera de Eventos', 'Recupera o elimina eventos descartados'],
-      'sorteo-rapido': ['Sorteo rápido', 'Carga participantes y sortea al instante']
+      sorteos: ['Sorteos', 'Crea sorteos y guarda sus ganadores'],
+      'sorteo-detalle': ['Sorteo', 'Participantes y ganadores']
     };
 
     function switchView(id) {
       document.querySelectorAll('.ce-view').forEach(v => v.classList.remove('active'));
       const target = document.getElementById('view-' + id);
       if (target) target.classList.add('active');
-      document.querySelectorAll('.ce-nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === id));
+      document.querySelectorAll('.ce-nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === id || (id === 'sorteo-detalle' && n.dataset.view === 'sorteos')));
       const meta = VIEW_TITLES[id];
       if (meta && meta[0]) {
         document.getElementById('topbar-title').textContent = meta[0];
@@ -140,7 +142,8 @@ if (hash.startsWith('#/lista/')) { const evId = hash.split('/').pop(); hideLoadi
       if (id === 'papelera') renderTrashGrid();
       if (id === 'dashboard') loadAdminDashboard();
       if (id === 'reportes') renderReportCards();
-      if (id === 'sorteo-rapido') qrRender();
+      if (id === 'sorteos') rfLoadList();
+      if (id === 'sorteo-detalle' && (typeof rfCurrent === 'undefined' || !rfCurrent)) { switchView('sorteos'); return; }
       toggleSidebar(false);
       lucide.createIcons();
       history.pushState({ view: id }, '', '#' + id);
