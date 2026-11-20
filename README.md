@@ -1,4 +1,4 @@
-# Comagro Eventos
+# Eventos
 
 Sistema de eventos, inscripciones, check-in, presupuesto, informes y sorteos.
 El código vive en este repositorio y la página de Adobe Commerce solo lo carga.
