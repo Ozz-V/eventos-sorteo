@@ -1,4 +1,4 @@
-# Comagro Eventos
+# Eventos
 
 Sistema de eventos, inscripciones, check-in, presupuesto, informes y sorteos.
 El código vive en este repositorio y la página de Adobe Commerce solo lo carga.
@@ -106,20 +106,6 @@ Desde la web nadie puede hacerse administrador.
 Ver `sql/recuperar_datos.sql`. Cada alta, cambio o borrado de eventos, inscriptos, turnos y gastos queda copiado en la tabla `audit_log` con fecha y correo de quién lo hizo.
 
 ---
-
-## Qué cambió en seguridad
-
-| Antes | Ahora |
-|---|---|
-| Cualquiera con la clave pública (visible en la página) podía leer **todos** los inscriptos de **todos** los eventos (nombres, correos, teléfonos) y también modificarlos o borrarlos. | Sin login no se puede leer ni tocar ninguna tabla. El público solo puede usar 3 funciones controladas. |
-| Cupos, duplicados, fechas y turnos se controlaban solo en el navegador (se podían saltear). | Se validan en el servidor. Dos personas no pueden tomar el último cupo al mismo tiempo. |
-| El presupuesto de cada evento era visible públicamente. | Solo lo ven administradores. |
-| Si se borraba algo, no había forma de recuperarlo. | Historial completo en `audit_log`, con quién y cuándo. |
-| Al editar un evento con turnos, se borraban y recreaban todos los turnos: los inscriptos perdían su turno (o se borraban, si la base tenía borrado en cascada). | Los turnos se actualizan conservando su ID. Si querés quitar un turno con inscriptos, pide confirmación y los inscriptos quedan "Sin turno", nunca se borran. |
-| Un nombre malicioso en el formulario (código HTML) se ejecutaba al abrir el panel o la lista. | Todo texto se muestra como texto. |
-| Un usuario logueado que no fuera admin podía usar la base igual. | Solo los correos de `event_admins` tienen acceso. |
-
-Arreglos menores incluidos: el formulario se colgaba cuando el evento estaba pausado; el filtro "Solo presentes / pendientes" del Excel se ignoraba; el cierre de inscripciones usaba la fecha UTC en vez de la de Paraguay; el borrado definitivo no borraba los turnos.
 
 ## Recomendaciones
 
