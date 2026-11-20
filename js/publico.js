@@ -192,6 +192,7 @@ document.getElementById('public-reg-form').onsubmit = async (e) => {
     duplicate: 'El correo o telefono ya fue registrado en este evento.',
     shift_required: 'Selecciona un turno para continuar.',
     invalid_shift: 'El turno elegido ya no esta disponible. Recarga la pagina.',
+    shift_full: 'Ese turno ya no tiene cupos. Elegi otro turno.',
     invalid_name: 'Ingresa tu nombre y apellido.',
     invalid_email: 'Por favor, ingresa un correo electronico valido.',
     invalid_phone: 'El telefono debe ser valido (ej: 0981... o internacional con +)'

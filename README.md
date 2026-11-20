@@ -1,11 +1,11 @@
-# Eventos
+# Comagro Eventos
 
 Sistema de eventos, inscripciones, check-in, presupuesto, informes y sorteos.
 El código vive en este repositorio y la página de Adobe Commerce solo lo carga.
 
 ```
 comagro-eventos/
-├── pagina-adobe-commerce.html   ← lo que se pega en Adobe Commerce (44 líneas)
+├── pagina-adobe-commerce.html   ← lo que se pega en Adobe Commerce (44 líneas, ya apunta a Ozz-V/eventos-sorteo)
 ├── css/
 │   ├── app.css                  ← estilos del panel y formularios
 │   └── sorteo.css               ← estilos de la ruleta
@@ -57,7 +57,7 @@ Agrega las funciones del formulario público y el **historial anti-pérdida**.
 ### Paso 3 — Reemplazar la página en Adobe Commerce
 
 1. Abrir `pagina-adobe-commerce.html` con un editor de texto (Bloc de notas, VS Code).
-2. **Buscar y reemplazar** `TU-USUARIO` por tu usuario de GitHub (aparece 12 veces).
+2. (Ya está configurado para `Ozz-V/eventos-sorteo`, no hay que reemplazar nada.)
 3. En Adobe Commerce: **Content → Pages →** tu página de eventos → **Edit**.
 4. Borrar todo el contenido actual y pegar el contenido del archivo:
    - Con Page Builder: usar un elemento **HTML Code** y pegar ahí.
@@ -78,12 +78,13 @@ Agrega las funciones del formulario público y el **historial anti-pérdida**.
 ### Paso 5 — Activar la seguridad
 
 En **SQL Editor**, pegar `sql/02_activar_seguridad.sql` y ejecutar.
+Solo quita las 2 políticas que dejaban a cualquiera leer y crear inscripciones sin login. No toca nada de la app móvil ni de usuarios logueados.
 **Repetir todas las pruebas del Paso 4** (las de incógnito son las importantes).
 Al final, ejecutar de nuevo la parte 6 de `00_diagnostico.sql` y comparar las cantidades con las del Paso 0.
 
 ### Si algo falla después del Paso 5
 
-Ejecutar `sql/99_volver_atras.sql`. Deja todo abierto como estaba antes, **sin tocar datos**. Después me pasás el error y lo vemos.
+Ejecutar `sql/99_volver_atras.sql`. Vuelve a crear las 2 políticas públicas exactamente como estaban, **sin tocar datos**. Después me pasás el error y lo vemos.
 
 ---
 
@@ -107,8 +108,22 @@ Ver `sql/recuperar_datos.sql`. Cada alta, cambio o borrado de eventos, inscripto
 
 ---
 
+## Qué cambió en seguridad
+
+| Antes | Ahora |
+|---|---|
+| Cualquiera con la clave pública (visible en la página) podía leer **todos** los inscriptos de **todos** los eventos (nombres, correos, teléfonos) y también modificarlos o borrarlos. | Sin login no se puede leer ni tocar ninguna tabla. El público solo puede usar 3 funciones controladas. |
+| Cupos, duplicados, fechas y turnos se controlaban solo en el navegador (se podían saltear). | Se validan en el servidor. Dos personas no pueden tomar el último cupo al mismo tiempo. |
+| Si se borraba algo, no había forma de recuperarlo. | Historial completo en `audit_log`, con quién y cuándo. |
+| Al editar un evento con turnos, se borraban y recreaban todos los turnos: los inscriptos perdían su turno (o se borraban, si la base tenía borrado en cascada). | Los turnos se actualizan conservando su ID. Si querés quitar un turno con inscriptos, pide confirmación y los inscriptos quedan "Sin turno", nunca se borran. |
+| Un nombre malicioso en el formulario (código HTML) se ejecutaba al abrir el panel o la lista. | Todo texto se muestra como texto. |
+
+Arreglos menores incluidos: el formulario se colgaba cuando el evento estaba pausado; el filtro "Solo presentes / pendientes" del Excel se ignoraba; el cierre de inscripciones usaba la fecha UTC en vez de la de Paraguay; el borrado definitivo no borraba los turnos.
+
 ## Recomendaciones
 
 - **Supabase → Authentication → Sign In / Providers**: si los usuarios del panel se crean a mano, desactivar **"Allow new users to sign up"**.
+- **Base compartida:** este Supabase también lo usa la app móvil. Hoy cualquier usuario logueado con perfil completo (no solo admins) puede leer todos los inscriptos (política "Lectura de registros a usuarios autenticados"). No se cambió para no romper la app; revisarlo si no es necesario.
+- **Presupuesto:** la política "Anyone can read events" permite que cualquiera lea la tabla `events`, incluida la columna `budget`. No se cambió por si otra app la usa sin login.
 - La **lista compartida** sigue mostrando correo y teléfono a quien tenga el link (igual que antes). Si querés ocultar esos datos, se cambia en `public_get_lista` (archivo `01`).
 - La clave `SUPABASE_KEY` de `core.js` es la clave pública (anon): está bien que sea visible. **Nunca** poner ahí la clave `service_role`.

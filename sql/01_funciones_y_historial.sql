@@ -5,19 +5,24 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- 1. ¿El usuario logueado es administrador?
+-- 1. Se usa la funcion is_event_admin() que YA EXISTE en este proyecto
+--    (correo presente en event_admins). No se modifica.
 -- ---------------------------------------------------------------------
-create or replace function public.is_event_admin()
+
+-- Fecha limite de inscripcion: registration_deadline es tipo DATE, se toma
+-- como valida hasta el final de ese dia (hora de Paraguay).
+create or replace function public.event_deadline_passed(p_deadline text)
 returns boolean
 language sql
 stable
-security definer
 set search_path = public
 as $$
-  select exists (
-    select 1 from public.event_admins a
-    where lower(a.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
-  );
+  select case
+    when p_deadline is null or p_deadline = '' then true
+    when length(p_deadline) = 10
+      then now() >= ((p_deadline::date + 1)::timestamp at time zone 'America/Asuncion')
+    else now() > p_deadline::timestamptz
+  end;
 $$;
 
 -- ---------------------------------------------------------------------
@@ -143,8 +148,7 @@ begin
   select count(*) into v_count from public.registrations where event_id = e.id;
 
   if e.date::date < v_today
-     and (to_jsonb(e) ->> 'registration_deadline' is null
-          or now() > (to_jsonb(e) ->> 'registration_deadline')::timestamptz) then
+     and public.event_deadline_passed(to_jsonb(e) ->> 'registration_deadline') then
     v_state := 'expired';
   elsif coalesce(to_jsonb(e) ->> 'status', '') in ('pausado', 'eliminado') then
     v_state := 'closed';
@@ -196,8 +200,7 @@ begin
   end if;
 
   if e.date::date < v_today
-     and (to_jsonb(e) ->> 'registration_deadline' is null
-          or now() > (to_jsonb(e) ->> 'registration_deadline')::timestamptz) then
+     and public.event_deadline_passed(to_jsonb(e) ->> 'registration_deadline') then
     return jsonb_build_object('ok', false, 'code', 'expired');
   end if;
   if coalesce(to_jsonb(e) ->> 'status', '') in ('pausado', 'eliminado') then
@@ -223,6 +226,13 @@ begin
     end if;
     if not exists (select 1 from public.event_shifts where id = v_shift and event_id = e.id) then
       return jsonb_build_object('ok', false, 'code', 'invalid_shift');
+    end if;
+    -- Cupo por turno (si el turno tiene max_capacity cargado)
+    select nullif(to_jsonb(s) ->> 'max_capacity', '')::numeric::int into v_cap
+      from public.event_shifts s where s.id = v_shift;
+    if v_cap is not null and v_cap > 0
+       and (select count(*) from public.registrations where shift_id = v_shift) >= v_cap then
+      return jsonb_build_object('ok', false, 'code', 'shift_full');
     end if;
   else
     v_shift := null;
@@ -301,4 +311,4 @@ revoke all on function public.public_event_shifts_json from public, anon, authen
 grant execute on function public.public_get_event  to anon, authenticated;
 grant execute on function public.public_register   to anon, authenticated;
 grant execute on function public.public_get_lista  to anon, authenticated;
-grant execute on function public.is_event_admin    to anon, authenticated;
+grant execute on function public.event_deadline_passed to anon, authenticated;

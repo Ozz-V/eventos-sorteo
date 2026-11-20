@@ -367,7 +367,7 @@ async function saveExtendReg() {
     return;
   }
 
-  const { error } = await sb.from('events').update({ registration_deadline: new Date(formValue).toISOString() }).eq('id', id);
+  const { error } = await sb.from('events').update({ registration_deadline: formValue.slice(0, 10) }).eq('id', id);
   if (!error) {
     showToast('Periodo de inscripción extendido', 'success');
     closeExtendRegModal();
