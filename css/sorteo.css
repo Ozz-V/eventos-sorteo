@@ -1,0 +1,89 @@
+#sorteo-root { display:none; position:fixed; inset:0; z-index:9000; background:#0f1740; font-family:'Roboto', sans-serif; overflow:hidden; }
+#sorteo-root.active { display:flex; flex-direction:column; }
+.sr-header { height:64px; background:rgba(0,0,0,0.35); border-bottom:1px solid rgba(74,171,223,0.18); display:flex; align-items:center; justify-content:space-between; padding:0 32px; flex-shrink:0; }
+.sr-header-left { display:flex; align-items:center; gap:16px; }
+.sr-header-left img { height:32px; width:auto; object-fit:contain; filter:brightness(0) invert(1); opacity:0.85; }
+.sr-event-name { font-size:18px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.85); }
+.sr-event-meta { font-size:12px; color:rgba(74,171,223,0.7); letter-spacing:0.06em; }
+.sr-participants-badge { display:flex; align-items:center; gap:8px; background:rgba(74,171,223,0.1); border:1px solid rgba(74,171,223,0.25); border-radius:20px; padding:6px 16px; font-size:13px; color:rgba(255,255,255,0.7); }
+.sr-participants-badge .count { color:#45d636; font-weight:800; font-size:16px; }
+.sr-close-btn { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.6); font-family:'Roboto', sans-serif; font-size:13px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:8px 20px; border-radius:6px; cursor:pointer; transition:all .2s; }
+.sr-close-btn:hover { background:rgba(255,255,255,0.14); color:#fff; }
+.sr-body { flex:1; display:flex; align-items:center; overflow:hidden; }
+.sr-wheel-col { flex:0 0 46%; height:100%; display:flex; align-items:center; justify-content:center; position:relative; }
+#sr-wheelCanvas { display:block; cursor:pointer; }
+.sr-name-col { flex:1; height:100%; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; padding-left:20px; padding-right:120px; position:relative; overflow:hidden; }
+.sr-label-small { font-size:13px; letter-spacing:0.18em; color:rgba(74,171,223,0.6); text-transform:uppercase; margin-bottom:12px; }
+.sr-big-name { font-size:clamp(32px,5vw,90px); font-weight:900; color:#45d636; letter-spacing:0.02em; text-transform:uppercase; line-height:1.1; user-select:none; white-space:normal; word-break:break-word; max-width:100%; }
+.sr-big-name.winner-flash { animation:sr-flash 0.44s linear 5; }
+@keyframes sr-flash { 0%,100%{color:#45d636;text-shadow:none;} 50%{color:#fff;text-shadow:0 0 40px #45d636;} }
+.sr-triangle { position:absolute; right:24px; top:50%; transform:translateY(-50%); width:0; height:0; border-top:40px solid transparent; border-bottom:40px solid transparent; border-right:56px solid #45d636; filter:drop-shadow(0 0 8px rgba(69,214,54,0.55)); }
+.sr-controls { height:76px; display:flex; align-items:center; justify-content:center; gap:16px; background:rgba(0,0,0,0.28); border-top:1px solid rgba(74,171,223,0.12); flex-shrink:0; }
+.sr-btn { font-family:'Roboto', sans-serif; font-size:14px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; border-radius:6px; padding:11px 26px; cursor:pointer; transition:all .2s; background:transparent; color:rgba(255,255,255,0.8); border:2px solid rgba(255,255,255,0.22); }
+.sr-btn:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.45); }
+.sr-btn-spin { background:#45d636; border-color:#45d636; color:#0c1440; font-size:17px; padding:11px 52px; box-shadow:0 0 24px rgba(69,214,54,0.3); }
+.sr-btn-spin:hover { background:#59e848; border-color:#59e848; }
+.sr-btn-spin:disabled { opacity:0.45; cursor:not-allowed; transform:none; box-shadow:none; }
+.sr-loading { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; background:#0f1740; z-index:10; }
+.sr-loading p { font-size:16px; letter-spacing:0.12em; color:rgba(74,171,223,0.7); text-transform:uppercase; }
+.sr-spinner { width:40px; height:40px; border:3px solid rgba(74,171,223,0.2); border-top-color:#4aabdf; border-radius:50%; animation:sr-spin .7s linear infinite; }
+@keyframes sr-spin { to{transform:rotate(360deg);} }
+.sr-empty { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:16px; background:#0f1740; }
+.sr-empty.show { display:flex; }
+.sr-empty h3 { font-size:24px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,255,255,0.7); }
+.sr-empty p { font-size:14px; color:rgba(74,171,223,0.6); }
+.sr-winner-banner { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.7); background:rgba(11,18,60,0.97); border:2px solid #45d636; border-radius:20px; padding:48px 72px; text-align:center; z-index:9100; opacity:0; pointer-events:none; transition:opacity .4s,transform .45s cubic-bezier(.34,1.56,.64,1); min-width:420px; }
+.sr-winner-banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); pointer-events:auto; }
+.sr-winner-banner .wb-label { font-size:14px; letter-spacing:0.22em; color:rgba(255,255,255,0.45); text-transform:uppercase; margin-bottom:8px; }
+.sr-winner-banner .wb-name { font-size:clamp(36px,5vw,68px); font-weight:900; color:#45d636; letter-spacing:0.04em; text-transform:uppercase; line-height:1; margin-bottom:10px; }
+.sr-winner-banner .wb-phone { font-size:22px; font-weight:700; color:rgba(74,171,223,0.8); margin-bottom:4px; }
+.sr-winner-banner .wb-company { font-size:16px; color:rgba(255,255,255,0.35); text-transform:uppercase; margin-bottom:32px; }
+.sr-winner-banner .wb-actions { display:flex; gap:10px; justify-content:center; }
+.sr-winner-banner .wb-btn { font-family:'Roboto', sans-serif; font-size:13px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:10px 24px; border-radius:6px; cursor:pointer; transition:all .2s; }
+.sr-winner-banner .wb-btn-close { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.18); color:rgba(255,255,255,0.65); }
+.sr-winner-banner .wb-btn-again { background:#45d636; border:1px solid #45d636; color:#0c1440; }
+.sr-panel-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9050; opacity:0; pointer-events:none; transition:opacity .3s; }
+.sr-panel-overlay.show { opacity:1; pointer-events:auto; }
+.sr-panel { position:fixed; top:0; right:-420px; width:400px; height:100%; background:#0d1848; border-left:1px solid rgba(74,171,223,0.2); z-index:9060; display:flex; flex-direction:column; padding:28px 24px 24px; gap:12px; transition:right .35s cubic-bezier(.4,0,.2,1); }
+.sr-panel.open { right:0; }
+.sr-panel-header { display:flex; justify-content:space-between; align-items:center; }
+.sr-panel-header h2 { font-size:16px; font-weight:800; letter-spacing:0.12em; color:#fff; text-transform:uppercase; }
+.sr-panel-close { background:none; border:none; color:rgba(255,255,255,0.45); font-size:24px; cursor:pointer; }
+.sr-panel-list { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
+.sr-participant-row { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; background:rgba(255,255,255,0.04); border:1px solid rgba(74,171,223,0.08); }
+.sr-participant-row .p-num { font-size:11px; color:rgba(74,171,223,0.5); font-weight:700; min-width:22px; }
+.sr-participant-row .p-name { flex:1; font-size:15px; font-weight:700; color:#fff; text-transform:uppercase; }
+.sr-participant-row .p-phone { font-size:11px; color:rgba(74,171,223,0.6); }
+.sr-panel-footer { font-size:12px; color:rgba(255,255,255,0.3); text-align:center; padding-top:8px; border-top:1px solid rgba(74,171,223,0.1); }
+#sr-wheelCanvas { transition: none; }
+
+/* ===== SORTEO RESPONSIVE (telefonos / vertical) ===== */
+#sorteo-root.sr-mobile .sr-header { height:auto; min-height:54px; padding:8px 14px; padding-top:calc(8px + env(safe-area-inset-top)); gap:10px; }
+#sorteo-root.sr-mobile .sr-header-left { gap:10px; min-width:0; flex:1; }
+#sorteo-root.sr-mobile .sr-header-left > div { min-width:0; }
+#sorteo-root.sr-mobile .sr-header-left img { height:22px; }
+#sorteo-root.sr-mobile .sr-event-name { font-size:13px; letter-spacing:0.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#sorteo-root.sr-mobile .sr-event-meta { display:none; }
+#sorteo-root.sr-mobile .sr-participants-badge { padding:4px 10px; font-size:11px; gap:5px; }
+#sorteo-root.sr-mobile .sr-participants-badge .count { font-size:14px; }
+#sorteo-root.sr-mobile .sr-participants-badge span:last-child { display:none; }
+#sorteo-root.sr-mobile .sr-close-btn { padding:6px 12px; font-size:11px; }
+#sorteo-root.sr-mobile .sr-body { flex-direction:column; justify-content:center; gap:4px; padding:8px 0; }
+#sorteo-root.sr-mobile .sr-wheel-col { flex:0 0 auto; height:auto; width:100%; }
+/* la rueda gira 90° para que el participante activo quede abajo, apuntando al nombre */
+#sorteo-root.sr-mobile #sr-wheelCanvas { transform:rotate(90deg); }
+#sorteo-root.sr-mobile .sr-name-col { flex:0 0 auto; height:auto; width:100%; align-items:center; text-align:center; padding:0 16px; }
+#sorteo-root.sr-mobile .sr-triangle { position:static; transform:none; order:-1; margin:0 auto 8px; border-top:0; border-bottom:26px solid #45d636; border-left:18px solid transparent; border-right:18px solid transparent; }
+#sorteo-root.sr-mobile .sr-label-small { font-size:10px; margin-bottom:4px; }
+#sorteo-root.sr-mobile .sr-big-name { font-size:clamp(24px,9vw,46px); text-align:center; }
+#sorteo-root.sr-mobile .sr-controls { height:auto; flex-wrap:wrap; gap:8px; padding:10px 14px; padding-bottom:calc(10px + env(safe-area-inset-bottom)); }
+#sorteo-root.sr-mobile .sr-btn { padding:10px 14px; font-size:12px; flex:1 1 40%; }
+#sorteo-root.sr-mobile .sr-btn-spin { order:-1; flex:1 1 100%; font-size:17px; padding:14px; }
+#sorteo-root.sr-mobile .sr-winner-banner { min-width:0; width:90vw; padding:28px 18px; border-radius:16px; }
+#sorteo-root.sr-mobile .sr-winner-banner .wb-name { font-size:clamp(26px,9vw,44px); word-break:break-word; }
+#sorteo-root.sr-mobile .sr-winner-banner .wb-phone { font-size:18px; }
+#sorteo-root.sr-mobile .sr-winner-banner .wb-company { font-size:13px; margin-bottom:22px; }
+#sorteo-root.sr-mobile .sr-winner-banner .wb-actions { flex-direction:column; }
+#sorteo-root.sr-mobile .sr-winner-banner .wb-btn { width:100%; padding:13px; }
+#sorteo-root.sr-mobile .sr-panel { width:100%; right:-100%; }
+#sorteo-root.sr-mobile .sr-panel.open { right:0; }
